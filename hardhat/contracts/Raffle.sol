@@ -9,7 +9,7 @@ error Raffle__NotEnoughEthEntered();
 error Raffle__TransactionNotComplete();
 error Raffle__NotOpen();
 
-abstract contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
+contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     // Types declarations
     enum RaffleState {
         OPEN,
@@ -28,6 +28,8 @@ abstract contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     // Lottery Variables
     address private s_recentWinner;
     RaffleState private s_raffleState;
+    uint256 private s_lastTimeStamp;
+    uint256 private immutable i_interval;
 
     // Events
     event RaffleEnter(address indexed player);
@@ -39,7 +41,8 @@ abstract contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         uint256 entranceFee,
         bytes32 gasLane,
         uint64 subscriptionId,
-        uint32 callbackGasLimit
+        uint32 callbackGasLimit,
+        uint256 interval
     ) VRFConsumerBaseV2(vrfCoordinatorV2) {
         i_entranceFee = entranceFee;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinatorV2);
@@ -47,6 +50,8 @@ abstract contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
         s_raffleState = RaffleState.OPEN;
+        s_lastTimeStamp = block.timestamp;
+        i_interval = interval;
     }
 
     function enterRaffle() public payable {
@@ -94,13 +99,17 @@ abstract contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         bytes calldata /* checkData */
     )
         external
-        view
         override
-        returns (bool upkeepNeeded, bytes memory performData)
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
     {
-        upkeepNeeded = false;
-
-        return (upkeepNeeded, "");
+        bool isOpen = (RaffleState.OPEN == s_raffleState);
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = (s_players.length > 0);
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
     }
 
     // view / pure functions
