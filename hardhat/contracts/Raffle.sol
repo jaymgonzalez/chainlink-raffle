@@ -8,6 +8,11 @@ import "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.s
 error Raffle__NotEnoughEthEntered();
 error Raffle__TransactionNotComplete();
 error Raffle__NotOpen();
+error Raffle__NotUpkeepNeeded(
+    uint256 currentBalance,
+    uint256 numPlayers,
+    uint256 raffleState
+);
 
 contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
     // Types declarations
@@ -66,7 +71,35 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         emit RaffleEnter(msg.sender);
     }
 
-    function requestRandomWinner() external {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    )
+        public
+        override
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        bool isOpen = (RaffleState.OPEN == s_raffleState);
+        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
+        bool hasPlayers = (s_players.length > 0);
+        bool hasBalance = address(this).balance > 0;
+        upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
+    }
+
+    function performUpkeep(
+        bytes memory /* checkData */
+    ) external override {
+        (bool upkeepNeeded, ) = checkUpkeep("");
+        if (!upkeepNeeded) {
+            revert Raffle__NotUpkeepNeeded(
+                address(this).balance,
+                s_players.length,
+                uint256(s_raffleState)
+            );
+        }
+
         s_raffleState = RaffleState.CALCULATING;
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane,
@@ -87,29 +120,12 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
         s_recentWinner = recentWinner;
         s_raffleState = RaffleState.OPEN;
         s_players = new address payable[](0);
+        s_lastTimeStamp = block.timestamp;
         (bool success, ) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Raffle__TransactionNotComplete();
         }
         emit WinnerPicked(recentWinner);
-    }
-
-    /// @dev this method is called by the Automation Nodes to check if `performUpkeep` should be performed
-    function checkUpkeep(
-        bytes calldata /* checkData */
-    )
-        external
-        override
-        returns (
-            bool upkeepNeeded,
-            bytes memory /* performData */
-        )
-    {
-        bool isOpen = (RaffleState.OPEN == s_raffleState);
-        bool timePassed = ((block.timestamp - s_lastTimeStamp) > i_interval);
-        bool hasPlayers = (s_players.length > 0);
-        bool hasBalance = address(this).balance > 0;
-        upkeepNeeded = (isOpen && timePassed && hasPlayers && hasBalance);
     }
 
     // view / pure functions
@@ -123,5 +139,25 @@ contract Raffle is VRFConsumerBaseV2, AutomationCompatibleInterface {
 
     function getRecentWinner() public view returns (address) {
         return s_recentWinner;
+    }
+
+    function getRaffleState() public view returns (RaffleState) {
+        return s_raffleState;
+    }
+
+    function getNumWords() public pure returns (uint256) {
+        return NUM_WORDS;
+    }
+
+    function getNumerOfPlayers() public view returns (uint256) {
+        return s_players.length;
+    }
+
+    function getLatestTimestamp() public view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getRequestConfirmations() public pure returns (uint256) {
+        return REQUEST_CONFIRMATION;
     }
 }
