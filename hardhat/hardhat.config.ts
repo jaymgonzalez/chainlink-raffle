@@ -16,9 +16,9 @@ const MAINNET_RPC_URL =
   process.env.MAINNET_RPC_URL ||
   process.env.ALCHEMY_MAINNET_RPC_URL ||
   'https://eth-mainnet.alchemyapi.io/v2/your-api-key'
-const RINKEBY_RPC_URL =
-  process.env.RINKEBY_RPC_URL ||
-  'https://eth-rinkeby.alchemyapi.io/v2/your-api-key'
+const GOERLI_RPC_URL =
+  process.env.GOERLI_RPC_URL ||
+  'https://eth-goerli.alchemyapi.io/v2/your-api-key'
 const KOVAN_RPC_URL =
   process.env.KOVAN_RPC_URL || 'https://eth-kovan.alchemyapi.io/v2/your-api-key'
 const POLYGON_MAINNET_RPC_URL =
@@ -57,8 +57,8 @@ const config: HardhatUserConfig = {
       saveDeployments: true,
       chainId: 42,
     },
-    rinkeby: {
-      url: RINKEBY_RPC_URL,
+    goerli: {
+      url: GOERLI_RPC_URL,
       accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
       //   accounts: {
       //     mnemonic: MNEMONIC,
@@ -85,7 +85,7 @@ const config: HardhatUserConfig = {
   etherscan: {
     // npx hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
     apiKey: {
-      rinkeby: ETHERSCAN_API_KEY,
+      goerli: ETHERSCAN_API_KEY,
       kovan: ETHERSCAN_API_KEY,
       polygon: POLYGONSCAN_API_KEY,
     },
