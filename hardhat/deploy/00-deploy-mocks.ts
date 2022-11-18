@@ -8,6 +8,7 @@ const GAS_PRICE_LINK = 1e9 // link per gas, is this the gas lane? // 0.000000001
 const deployMocks: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
+  //@ts-ignore
   const { deployments, getNamedAccounts, network } = hre
   const { deploy, log } = deployments
   const { deployer } = await getNamedAccounts()

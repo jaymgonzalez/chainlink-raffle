@@ -13,6 +13,7 @@ const FUND_AMOUNT = '1000000000000000000000'
 const deployRaffle: DeployFunction = async function (
   hre: HardhatRuntimeEnvironment
 ) {
+  //@ts-ignore
   const { deployments, getNamedAccounts, network, ethers } = hre
   const { deploy, log } = deployments
   const { deployer } = await getNamedAccounts()
