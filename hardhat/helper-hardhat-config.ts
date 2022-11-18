@@ -14,7 +14,7 @@ export interface networkConfigInfo {
   [key: number]: networkConfigItem
 }
 
-const networkConfig: networkConfigInfo = {
+export const networkConfig: networkConfigInfo = {
   31337: {
     name: 'localhost',
     subscriptionId: '6615',
@@ -39,3 +39,6 @@ const networkConfig: networkConfigInfo = {
     keepersUpdateInterval: '30',
   },
 }
+
+export const developmentChains = ['hardhat', 'localhost']
+export const VERIFICATION_BLOCK_CONFIRMATIONS = 6
